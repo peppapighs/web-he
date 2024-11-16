@@ -1,11 +1,10 @@
 export interface KeyLayout {
-  x: number
-  y: number
+  matrix: number
   w: number
   h: number
+  mt: number
+  ml: number
 }
-
-export type KeyboardLayout = Array<KeyLayout>
 
 export interface KeyboardMetadata {
   name: string
@@ -15,5 +14,5 @@ export interface KeyboardMetadata {
   firmwareProductId: number
   numLayers: number
   numProfiles: number
-  layout: KeyboardLayout
+  layout: KeyLayout[][]
 }
