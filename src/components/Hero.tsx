@@ -7,6 +7,7 @@ import {
   VENDOR_CLASS_PROTOCOL_VERSION,
   VendorClassId
 } from '@/constants/vendor-class'
+import { parseKeyboardConfig } from '@/lib/keyboard'
 
 export default function Hero() {
   const connectDevice = async () => {
@@ -62,7 +63,7 @@ export default function Hero() {
       })
       console.log('Connected device:', device)
 
-      const configLength = await device.controlTransferIn(
+      const configLengthData = await device.controlTransferIn(
         {
           requestType: 'class',
           recipient: 'interface',
@@ -73,7 +74,38 @@ export default function Hero() {
         2
       )
 
-      console.log(configLength.data?.getUint16(0, true))
+      if (configLengthData.data === undefined) {
+        throw new Error('Failed to get keyboard config length')
+      }
+
+      const configLength = configLengthData.data.getUint16(0, true)
+
+      const configData = await device.controlTransferIn(
+        {
+          requestType: 'class',
+          recipient: 'interface',
+          request: VendorClassId.VENDOR_CLASS_GET_KEYBOARD_CONFIG,
+          value: 0,
+          index: intfNum
+        },
+        configLength
+      )
+
+      if (configData.data === undefined) {
+        throw new Error('Failed to get keyboard config')
+      }
+
+      const [config, offset] = parseKeyboardConfig(
+        KEYBOARD_METADATA[0],
+        configData.data,
+        0
+      )
+
+      if (offset !== configLength) {
+        throw new Error('Failed to parse keyboard config')
+      }
+
+      console.log('Keyboard config:', config)
     } catch (error) {
       console.log(error)
     }

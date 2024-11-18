@@ -7,8 +7,9 @@ export const KEYBOARD_METADATA: KeyboardMetadata[] = [
     vendorId: 0xbeef,
     bootloaderProductId: 0xdf01,
     firmwareProductId: 0xab01,
+    numProfiles: 2,
     numLayers: 4,
-    numProfiles: 4,
+    numKeys: 8,
     layout: [
       [
         { matrix: 0, w: 1, h: 1, mt: 0, ml: 0 },

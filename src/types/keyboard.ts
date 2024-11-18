@@ -12,8 +12,9 @@ export interface KeyboardMetadata {
   vendorId: number
   bootloaderProductId: number
   firmwareProductId: number
-  numLayers: number
   numProfiles: number
+  numLayers: number
+  numKeys: number
   layout: KeyLayout[][]
 }
 
@@ -57,4 +58,21 @@ export interface KeyboardConfig {
   keyboard_profile: number
   key_switch_config: KeySwitchConfig[][]
   keymap: number[][][]
+}
+
+export enum KeySwitchId {
+  KEY_SWITCH_REST = 0x0,
+  KEY_SWITCH_RT_DOWN = 0x1,
+  KEY_SWITCH_RT_UP = 0x2
+}
+
+export interface KeySwitchState {
+  min_value: number
+  max_value: number
+  adc_value: number
+  distance: number
+  peek_distance: number
+  last_press_time: number
+  state: KeySwitchId
+  pressed: boolean
 }
