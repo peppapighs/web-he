@@ -7,9 +7,14 @@ import {
   VENDOR_CLASS_PROTOCOL_VERSION,
   VendorClassId
 } from '@/constants/vendor-class'
-import { parseKeyboardConfig } from '@/lib/keyboard'
+import { parseKeyboardConfig, parseKeySwitchState } from '@/lib/keyboard'
+import { KeySwitchState } from '@/types/keyboard'
+import { useState } from 'react'
+import { cn } from '@/lib/utils'
 
 export default function Hero() {
+  const [switchState, setSwitchState] = useState<KeySwitchState[]>([])
+
   const connectDevice = async () => {
     try {
       const device = await navigator.usb.requestDevice({
@@ -54,31 +59,19 @@ export default function Hero() {
 
       await device.claimInterface(intfNum)
       await device.selectAlternateInterface(intfNum, 0)
-      await device.controlTransferOut({
+
+      const result = await device.controlTransferOut({
         requestType: 'class',
         recipient: 'interface',
         request: VendorClassId.VENDOR_CLASS_PROTOCOL_VERSION_CHECK,
         value: VENDOR_CLASS_PROTOCOL_VERSION,
         index: intfNum
       })
-      console.log('Connected device:', device)
-
-      const configLengthData = await device.controlTransferIn(
-        {
-          requestType: 'class',
-          recipient: 'interface',
-          request: VendorClassId.VENDOR_CLASS_GET_KEYBOARD_CONFIG_LENGTH,
-          value: 0,
-          index: intfNum
-        },
-        2
-      )
-
-      if (configLengthData.data === undefined) {
-        throw new Error('Failed to get keyboard config length')
+      if (result.status !== 'ok') {
+        throw new Error('Failed to check protocol version')
       }
 
-      const configLength = configLengthData.data.getUint16(0, true)
+      console.log('Connected device:', device)
 
       const configData = await device.controlTransferIn(
         {
@@ -88,24 +81,53 @@ export default function Hero() {
           value: 0,
           index: intfNum
         },
-        configLength
+        312
       )
 
-      if (configData.data === undefined) {
+      if (configData.status !== 'ok' || configData.data === undefined) {
         throw new Error('Failed to get keyboard config')
       }
 
-      const [config, offset] = parseKeyboardConfig(
+      const [config] = parseKeyboardConfig(
         KEYBOARD_METADATA[0],
         configData.data,
         0
       )
 
-      if (offset !== configLength) {
-        throw new Error('Failed to parse keyboard config')
-      }
-
       console.log('Keyboard config:', config)
+
+      while (true) {
+        const switchStateData = await device.controlTransferIn(
+          {
+            requestType: 'class',
+            recipient: 'interface',
+            request: VendorClassId.VENDOR_CLASS_GET_KEY_SWITCH_STATE,
+            value: 0,
+            index: intfNum
+          },
+          16 * 8
+        )
+
+        if (
+          switchStateData.status !== 'ok' ||
+          switchStateData.data === undefined
+        ) {
+          throw new Error('Failed to get switch state')
+        }
+
+        let offset = 0
+        const states: KeySwitchState[] = []
+        for (let i = 0; i < 8; i++) {
+          const [state, newOffset] = parseKeySwitchState(
+            switchStateData.data,
+            offset
+          )
+          states.push(state)
+          offset = newOffset
+        }
+
+        setSwitchState(states)
+      }
     } catch (error) {
       console.log(error)
     }
@@ -120,6 +142,35 @@ export default function Hero() {
         <div className="flex justify-center space-x-4">
           <Button onClick={connectDevice}>Connect</Button>
           <Button variant="secondary">Demo</Button>
+        </div>
+        <div className="mt-6 flex flex-col">
+          {switchState.length > 0 &&
+            KEYBOARD_METADATA[0].layout.map((row, i) => (
+              <div key={i} className="flex">
+                {row.map(({ matrix, w, h, ml, mt }, j) => (
+                  <div
+                    key={j}
+                    className="p-1"
+                    style={{
+                      width: `${w * 4}rem`,
+                      height: `${h * 4}rem`,
+                      marginLeft: `${ml * 4}rem`,
+                      marginTop: `${mt * 4}rem`
+                    }}
+                  >
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'h-full w-full',
+                        switchState[matrix].pressed ? 'border-4' : 'border'
+                      )}
+                    >
+                      {(switchState[matrix].distance / 100).toFixed(2)}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ))}
         </div>
       </CardContent>
     </Card>
