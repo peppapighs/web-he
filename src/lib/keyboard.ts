@@ -61,6 +61,8 @@ export const parseKeyboardConfig = (
   offset += 4
   const version = data.getUint16(offset, true)
   offset += 2
+  const nkro = data.getUint8(offset) == 1
+  offset += 1
   const switch_profile = data.getUint8(offset)
   offset += 1
   const keyboard_profile = data.getUint8(offset)
@@ -92,6 +94,7 @@ export const parseKeyboardConfig = (
     {
       magic,
       version,
+      nkro,
       switch_profile,
       keyboard_profile,
       key_switch_config,

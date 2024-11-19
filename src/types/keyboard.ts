@@ -54,6 +54,7 @@ export interface KeySwitchConfig {
 export interface KeyboardConfig {
   magic: number
   version: number
+  nkro: boolean
   switch_profile: SwitchProfileId
   keyboard_profile: number
   key_switch_config: KeySwitchConfig[][]
