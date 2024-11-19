@@ -8,6 +8,7 @@ import {
   ArrowUp,
   Bookmark,
   Calculator,
+  Factory,
   FastForward,
   Home,
   Laptop,
@@ -20,6 +21,7 @@ import {
   Power,
   RefreshCw,
   Rewind,
+  RotateCcw,
   Search,
   SkipBack,
   SkipForward,
@@ -845,6 +847,39 @@ const BASIC_KEYCODES: Record<number, DisplayedKeycode> = {
   }
 }
 
+const FIRMWARE_KEYCODES: Record<number, DisplayedKeycode> = {
+  [Keycode.FW_BOOTLOADER]: {
+    display: ['Boot'],
+    description: 'Jump to bootloader',
+    code: 'FW_BOOTLOADER'
+  },
+  [Keycode.FW_REBOOT]: {
+    display: [RotateCcw],
+    description: 'Reboot keyboard',
+    code: 'FW_REBOOT'
+  },
+  [Keycode.FW_FACTORY_RESET]: {
+    display: [Factory],
+    description: 'Factory reset',
+    code: 'FW_FACTORY_RESET'
+  },
+  [Keycode.FW_NKRO_ON]: {
+    display: ['NKRO', 'On'],
+    description: 'Enable NKRO',
+    code: 'FW_NKRO_ON'
+  },
+  [Keycode.FW_NKRO_OFF]: {
+    display: ['NKRO', 'Off'],
+    description: 'Disable NKRO',
+    code: 'FW_NKRO_OFF'
+  },
+  [Keycode.FW_NKRO_TOGGLE]: {
+    display: ['NKRO', 'Toggle'],
+    description: 'Toggle NKRO',
+    code: 'FW_NKRO_TOGGLE'
+  }
+}
+
 const displayUnknownKeycode = (keycode: Keycode): DisplayedKeycode => {
   return {
     display: [keycode.toString(16).toUpperCase()],
@@ -920,6 +955,15 @@ export const displayKeycode = (keycode: Keycode): DisplayedKeycode => {
       description: `Activate Profile ${keycode & 0x000f}`,
       code: 'PROFILE_SET'
     }
+  } else if (
+    Keycode.FW_BOOTLOADER <= keycode &&
+    keycode <= Keycode.FW_NKRO_TOGGLE
+  ) {
+    if (keycode in FIRMWARE_KEYCODES) {
+      return FIRMWARE_KEYCODES[keycode]
+    }
+
+    return displayUnknownKeycode(keycode)
   } else {
     return displayUnknownKeycode(keycode)
   }
